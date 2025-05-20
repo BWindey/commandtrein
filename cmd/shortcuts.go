@@ -13,8 +13,24 @@ func init() {
 
 func shortcutCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "shortcut",
-		Short: "Manage connection shortcuts",
+		Use:              "shortcut",
+		Short:            "Manage connection shortcuts",
+		TraverseChildren: true,
+	}
+
+	listCmd := &cobra.Command{
+		Use:   "list",
+		Short: "List all shortcuts",
+		Run: func(cmd *cobra.Command, args []string) {
+			// Ensure we get the flag value properly
+			simple, _ := cmd.Root().PersistentFlags().GetBool("simple")
+
+			if simple {
+				printShortcutsSimple()
+			} else {
+				printShortcutsFormatted()
+			}
+		},
 	}
 
 	cmd.AddCommand(
@@ -30,18 +46,22 @@ func shortcutCmd() *cobra.Command {
 				fmt.Printf("Added shortcut '%s': %s → %s\n", args[0], args[1], args[2])
 			},
 		},
-		&cobra.Command{
-			Use:   "list",
-			Short: "List all shortcuts",
-			Run: func(cmd *cobra.Command, args []string) {
-				fmt.Println("Configured shortcuts:")
-				for name, shortcut := range config.Shortcuts {
-					style := lipgloss.NewStyle().Italic(true)
-					fmt.Printf("  %s: %s → %s\n", style.Render(name), shortcut.Station1, shortcut.Station2)
-				}
-			},
-		},
+		listCmd,
 	)
 
 	return cmd
+}
+
+func printShortcutsFormatted() {
+	fmt.Println("Configured shortcuts:")
+	for name, shortcut := range config.Shortcuts {
+		style := lipgloss.NewStyle().Italic(true)
+		fmt.Printf("  %s: %s → %s\n", style.Render(name), shortcut.Station1, shortcut.Station2)
+	}
+}
+
+func printShortcutsSimple() {
+	for name := range config.Shortcuts {
+		fmt.Println(name)
+	}
 }
